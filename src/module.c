@@ -35,22 +35,14 @@ MODULE_DESCRIPTION("Kernel message daemon as a character device amongst OS users
 MODULE_LICENSE("MIT");
 MODULE_VERSION("0.1");
 
-struct kmessaged_dev {
-    kmessage_t *data;
-    unsigned long nr_msgs;
-    struct semaphore sem;
-    struct cdev cdev;
-};
-
-struct kmessaged_dev *kmessaged_devices;
-
 struct kmessaged_ops kmessaged_ops = {
-    .owner =    THIS_MODULE,
-    .read =     kmessaged_read,
-    .write =    kmessaged_write,
-    .ioctl =    kmessaged_ioctl,
-    .open =     kmessaged_open,
-    .release =  kmessaged_release
+    .owner = THIS_MODULE,
+    .llseek = kmessaged_llseek, 
+    .read = kmessaged_read,
+    .write = kmessaged_write,
+    .unlocked_ioctl = kmessaged_ioctl,
+    .open = kmessaged_open,
+    .release = kmessaged_release
 };
 
 /**
@@ -65,7 +57,6 @@ static int __init kmessaged_init()
     int result = 0;
     size_t i = 0;
     dev_t devno = 0;
-    struct kmessaged_dev *dev;
 
     if (KMESSAGED_MAJOR_VERSION) {
         devno = MKDEV(KMESSAGED_MAJOR_VERSION, KMESSAGED_MINOR_VERSION);
@@ -79,27 +70,6 @@ static int __init kmessaged_init()
         printk(KERN_WARNING "kmessaged: can't get major %d\n", kmessaged_major_version);
 
         return result;
-    }
-
-    kmessaged_devices = kmalloc(kmessaged_nr_devs * sizeof(struct kmessaged_dev), GFP_KERNEL);
-
-    if (!kmessaged_devices) {
-        result = -ENOMEM;
-
-        goto fail;
-    }
-
-    memset(kmessaged_devices, 0, kmessaged_nr_devs * sizeof(struct kmessaged_dev));
-
-    for (i = 0; i < kmessaged_nr_devs; ++i) {
-        dev = &kmessaged_devices[i];
-
-        dev->data = NULL;
-        dev->nr_msgs = 0;
-        init_MUTEX(&dev->sem);
-        
-        devno = MKDEV(kmessaged_major_version, kmessaged_minor_version + i);
-        cdev_init(&dev->cdev, &);
     }
 
     return 0;

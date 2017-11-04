@@ -5,7 +5,7 @@
 #include "message_limit.h"
 #include "query.h"
 
-int kmessaged_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, void *arg)
+int kmessaged_ioctl(struct file *filp, unsigned int cmd, void *arg)
 {
     int err = 0;
     int result = 0;
