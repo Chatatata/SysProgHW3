@@ -14,7 +14,7 @@ struct kmessaged_dispatch_queue_t {
  *
  * @warning This function should be only called once.
  */
-KMESSAGED_EXPORT void kmessaged_dispatch_queue_init_main();
+KMESSAGED_EXPORT void kmessaged_dispatch_queue_init_main(void);
 
 /**
  * kmessaged_dispatch_queue_create
@@ -35,7 +35,7 @@ KMESSAGED_EXPORT int kmessaged_dispatch_queue_create(struct kmessaged_dispatch_q
  *
  * @return Copy of the global dispatch queue struct.
  */
-KMESSAGED_EXPORT struct kmessaged_dispatch_queue_t kmessaged_dispatch_get_main_queue();
+KMESSAGED_EXPORT struct kmessaged_dispatch_queue_t kmessaged_dispatch_get_main_queue(void);
 
 /**
  * kmessaged_dispatch_msg

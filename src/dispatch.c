@@ -1,8 +1,13 @@
 #include "dispatch.h"
 
 #include <linux/kernel.h>
+#include <linux/cdev.h>
 
 #include "kmessage.h"
+#include "ioctl.h"
+#include "rw.h"
+#include "llseek.h"
+#include "open_release.h"
 
 #define MIN(a,b) (a < b ? a : b);
 
@@ -20,10 +25,21 @@ static struct _kmessaged_dispatch_queue_opaque_t {
     struct _kmessaged_kmessage_node_t *data;
     struct _kmessaged_dispatch_queue_opaque_t *next;
     struct semaphore dsema;
+    struct cdev cdev;
 };
 
 //  Pointer to the first dispatch queue.
 static _kmessaged_dispatch_queue_opaque_t *node = (void *)0x0;
+
+struct file_operations kmessaged_fops = {
+    .owner = THIS_MODULE,
+    .llseek = kmessaged_llseek,
+    .read = kmessaged_read,
+    .write = kmessaged_write,
+    .unlocked_ioctl = kmessaged_ioctl,
+    .open = kmessaged_open,
+    .release = kmessaged_release
+};
 
 static kmessaged_dispatch_queue_t convert_to_opaque_type(struct _kmessaged_dispatch_queue_opaque_t val)
 {
@@ -80,6 +96,7 @@ void kmessaged_dispatch_queue_init_main()
     node->data = 0x0;
     node->next = 0x0;
     sema_init(&node->dsema, 1);
+    cdev_init(&node->cdev, &kmessaged_fops);
 
     printk(KERN_DEBUG, "kmessaged: successfully initialized main dispatch queue\n");
 }

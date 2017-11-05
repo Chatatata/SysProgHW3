@@ -10,40 +10,22 @@
 #include <linux/fcntl.h>
 #include <linux/seq_file.h>
 #include <linux/cdev.h>
-#include <asm/system.h>
+#include <asm/switch_to.h>
 #include <asm/uaccess.h>
 
 #include "kmessaged.h"
-#include "kmessage.h"
+#include "dispatch.h"
 
-#define KMESSAGED_MAJOR
+unsigned int kmessaged_dev_major = KMESSAGED_DEFAULT_DEV_MAJOR;
+unsigned int kmessaged_dev_minor = KMESSAGED_DEFAULT_DEV_MINOR;
 
-extern const unsigned int KMESSAGED_MAJOR_VERSION;
-extern const unsigned int KMESSAGED_MINOR_VERSION;
-extern const unsigned int KMESSAGED_NR_DEVS;
-extern const char KMESSAGED_DV_NAME;
-
-unsigned int kmessaged_major_version = KMESSAGED_MAJOR_VERSION;
-unsigned int kmessaged_minor_version = KMESSAGED_MINOR_VERSION;
-unsigned int kmessaged_nr_devs = KMESSAGED_NR_DEVS;
-
-module_param(KMESSAGED_MAJOR_VERSION, int, S_IRUGO);
-module_param(KMESSAGED_MINOR_VERSION, int, S_IRUGO);
+module_param(kmessaged_dev_major, int, S_IRUGO);
+module_param(kmessaged_dev_minor, int, S_IRUGO);
 
 MODULE_AUTHOR("Bugra Ekuklu, Muratcan Sahin");
 MODULE_DESCRIPTION("Kernel message daemon as a character device amongst OS users.");
 MODULE_LICENSE("MIT");
 MODULE_VERSION("0.1");
-
-struct kmessaged_ops kmessaged_ops = {
-    .owner = THIS_MODULE,
-    .llseek = kmessaged_llseek, 
-    .read = kmessaged_read,
-    .write = kmessaged_write,
-    .unlocked_ioctl = kmessaged_ioctl,
-    .open = kmessaged_open,
-    .release = kmessaged_release
-};
 
 /**
  * kmessaged_init
@@ -52,27 +34,28 @@ struct kmessaged_ops kmessaged_ops = {
  *
  * @returns Returns 0 if succesful.
  */
-static int __init kmessaged_init()
+static int __init kmessaged_init(void)
 {
     int result = 0;
-    size_t i = 0;
     dev_t devno = 0;
 
-    if (KMESSAGED_MAJOR_VERSION) {
-        devno = MKDEV(KMESSAGED_MAJOR_VERSION, KMESSAGED_MINOR_VERSION);
-        result = register_chrdev_region(devno, KMESSAGED_NR_DEVS, KMESSAGED_DV_NAME);
+    if (KMESSAGED_DEFAULT_DEV_MAJOR) {
+        devno = MKDEV(KMESSAGED_DEFAULT_DEV_MAJOR, KMESSAGED_DEFAULT_DEV_MINOR);
+        result = register_chrdev_region(devno, 1, KMESSAGED_DV_NAME);
     } else {
-        result = alloc_chrdev_region(&devno, KMESSAGED_MINOR_VERSION, KMESSAGED_NR_DEVS, KMESSAGED_DV_NAME);
-        kmessaged_major_version = MAJOR(devno); 
+        result = alloc_chrdev_region(&devno, KMESSAGED_DEFAULT_DEV_MINOR, 1, KMESSAGED_DV_NAME);
+        kmessaged_dev_major = MAJOR(devno); 
     }
 
     if (result < 0) {
-        printk(KERN_WARNING "kmessaged: can't get major %d\n", kmessaged_major_version);
+        printk(KERN_WARNING "kmessaged: can't get major %d\n", kmessaged_dev_major);
 
         return result;
     }
 
-    return 0;
+    kmessaged_dispatch_queue_init_main();
+
+    return result;
 }
 
 /**
@@ -80,7 +63,7 @@ static int __init kmessaged_init()
  *
  * Performs cleanup and gracefully terminates the module.
  */
-static void __exit kmessaged_exit()
+static void __exit kmessaged_exit(void)
 {
     //  do some cleanup...
 }

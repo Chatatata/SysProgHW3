@@ -21,7 +21,7 @@ struct kmessage_t {
  *
  * @return 0 if successful, EINVAL if invalid parameter provided, ENOMEM if no memory has left on device.
  */
-KMESSAGED_EXPORT int kmessaged_msg_init(const kmessage_t *msgstruct, const unsigned long len, const uid_t uid);
+KMESSAGED_EXPORT int kmessaged_msg_init(struct kmessage_t *msgstruct, const unsigned long len, const uid_t uid);
 
 /**
  * kmessaged_msg_create
@@ -34,7 +34,7 @@ KMESSAGED_EXPORT int kmessaged_msg_init(const kmessage_t *msgstruct, const unsig
  *
  * @return 0 if successful, EINVAL if invalid parameter provided, ENOMEM if no memory has left on device.
  */
-KMESSAGED_EXPORT int kmessaged_msg_create(const kmessage_t *msgstruct, const char *msgdata, const uid_t uid);
+KMESSAGED_EXPORT int kmessaged_msg_create(struct kmessage_t *msgstruct, const char *msgdata, const uid_t uid);
 
 /**
  * kmessaged_msg_release
@@ -45,4 +45,4 @@ KMESSAGED_EXPORT int kmessaged_msg_create(const kmessage_t *msgstruct, const cha
  * 
  * @return This function always returns 0.
  */
-KMESSAGED_EXPORT int kmessaged_msg_release(const kmessage_t *msgstruct);
+KMESSAGED_EXPORT int kmessaged_msg_release(struct kmessage_t *msgstruct);

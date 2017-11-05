@@ -1,4 +1,15 @@
-obj-m := kmessaged.o
+ifneq ($(KERNELRELEASE),)
+	include Kbuild
+else
+	KDIR ?= /lib/modules/`uname -r`/build
 
-all: 
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+.PHONY = default clean
+
+default:
+	$(MAKE) -C $(KDIR) M=$$PWD
+
+clean:
+	$(MAKE) -C $(KDIR) M=$$PWD clean
+
+endif
+

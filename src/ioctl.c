@@ -1,11 +1,15 @@
 #include "ioctl.h"
 
+#include <linux/errno.h>
+#include <asm/switch_to.h>
+#include <asm/uaccess.h>
+
 #include "reset.h"
 #include "read_mode.h"
 #include "message_limit.h"
 #include "query.h"
 
-int kmessaged_ioctl(struct file *filp, unsigned int cmd, void *arg)
+int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
     int err = 0;
     int result = 0;
