@@ -2,6 +2,8 @@
 
 #include "kmessaged.h"
 
+#include <linux/types.h>
+
 struct kmessaged_dispatch_queue_t {
     unsigned long id;
     const char *qname;
@@ -48,5 +50,5 @@ KMESSAGED_EXPORT struct kmessaged_dispatch_queue_t kmessaged_dispatch_get_main_q
  *
  * @return 0 if successful, otherwise ENOMEM indicating maximum number of queues is achieved.
  */
-KMESSAGED_EXPORT int kmessaged_dispatch_msg(struct kmessaged_dispatch_queue_t queue, const char *msg, uid_t uid);
+KMESSAGED_EXPORT int kmessaged_dispatch_msg(struct kmessaged_dispatch_queue_t queue, const char *msg, uid_t uid, const char *recipient);
 

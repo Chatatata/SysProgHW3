@@ -4,4 +4,4 @@
 
 #include <linux/fs.h>
 
-KMESSAGED_EXPORT int kmessaged_ioctl(struct file *filp, unsigned int cmd, void *arg);
+KMESSAGED_EXPORT extern int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);

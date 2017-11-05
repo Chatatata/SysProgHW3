@@ -1,49 +1,33 @@
 #include "kmessage.h"
 
+#include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/slab.h>
 #include <linux/string.h>
 
-int kmessaged_msg_init(const kmessage_t *msgstruct, const unsigned long len, const uid_t uid)
-{
-    if (!msgstruct || len == 0) 
-        return EINVAL;
-
-    msgstruct->msg = kmalloc(sizeof(char) * len, GFP_KERNEL);
-
-    if (!msgstruct->msg)
-        return ENOMEM;
-
-    msgstruct->len = len;
-    msgstruct->uid = uid;
-
-    return 0;
-}
-
-int kmessaged_msg_create(const kmessage_t *msgstruct, const char *msgdata, const uid_t uid)
+int kmessaged_msg_create(struct kmessage_t *msgstruct, const char *msgdata, const uid_t uid, const char *recipient)
 {
     size_t len;
     
-    if (!msgdata) 
+    if (!msgdata || !recipient) {
+        printk(KERN_DEBUG "kmessaged: msgdata %x or recipient %x was NULL\n", msgdata, recipient);
+
         return EINVAL;
-
-    len = strlen(msgdata);
-
-    msgstruct->msg = kmalloc(len * sizeof(char), GFP_KERNEL);
-
-    if (!msgstruct->msg)
-        return ENOMEM;
-
-    memcpy(msgstruct->msg, msgdata, len * sizeof(char));
+    }
+    
+    msgstruct->msg = msgdata;
     msgstruct->len = len;
     msgstruct->uid = uid;
+    msgstruct->recipient = recipient;
 
     return 0;
 }
 
-int kmessaged_msg_release(const kmessage_t *msgstruct)
+int kmessaged_msg_release(struct kmessage_t *msgstruct)
 {
     kfree(msgstruct->msg);
+    kfree(msgstruct->recipient);
 
     return 0;
 }
+

@@ -9,4 +9,4 @@
  *
  * @returns Returns 0 on success, otherwise -EFAULT.
  */
-KMESSAGED_EXPORT int kmessaged_reset();
+KMESSAGED_EXPORT int kmessaged_reset(void);

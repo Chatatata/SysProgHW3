@@ -2,6 +2,9 @@
 
 #include "kmessaged.h"
 
+#include <linux/fs.h>
+#include <linux/errno.h>
+
 typedef enum kmessaged_query_type_t {
     KMESSAGED_QUERY_NAME = 0,
     KMESSAGED_QUERY_CONTENT = 1,

@@ -6,7 +6,7 @@ else
 .PHONY = default clean
 
 default:
-	$(MAKE) -C $(KDIR) M=$$PWD
+	$(MAKE) -C $(KDIR) SUBDIRS=$$PWD M=$$PWD modules
 
 clean:
 	$(MAKE) -C $(KDIR) M=$$PWD clean

@@ -1,6 +1,9 @@
 #include "ioctl.h"
 
+#include <linux/kernel.h>
+#include <linux/slab.h>
 #include <linux/errno.h>
+#include <linux/module.h>
 #include <asm/switch_to.h>
 #include <asm/uaccess.h>
 
@@ -53,7 +56,7 @@ int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             break;
         
         case KMESSAGED_IOC_S_MSGLMT:
-            result = __get_user(msglmt, (unsigned long long __user *)arg);
+            result = __get_user(msglmt, (unsigned long __user *)arg);
             
             if (result != 0) {
                 return result;
@@ -65,7 +68,7 @@ int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         case KMESSAGED_IOC_MSGLMT:
             msglmt = kmessaged_get_message_limit();
 
-            result = __put_user(msglmt, (unsigned long long __user *)arg);
+            result = __put_user(msglmt, (unsigned long __user *)arg);
             break;
 
         case KMESSAGED_IOC_RMMSG:

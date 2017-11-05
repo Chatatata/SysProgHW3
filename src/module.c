@@ -48,7 +48,7 @@ static int __init kmessaged_init(void)
     }
 
     if (result < 0) {
-        printk(KERN_WARNING "kmessaged: can't get major %d\n", kmessaged_dev_major);
+        printk(KERN_WARNING "kmessaged: can't get major %d, err: %d\n", kmessaged_dev_major, result);
 
         return result;
     }

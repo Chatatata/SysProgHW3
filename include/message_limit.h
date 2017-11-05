@@ -2,6 +2,8 @@
 
 #include "kmessaged.h"
 
+#include <linux/fs.h>
+
 typedef unsigned long long msglmt_t;
 
 /**
@@ -23,5 +25,5 @@ KMESSAGED_EXPORT int kmessaged_set_message_limit(msglmt_t msglmt);
  *
  * @returns Current message limit of the box.
  */
-KMESSAGED_EXPORT msglmt_t kmessaged_get_message_limit();
+KMESSAGED_EXPORT msglmt_t kmessaged_get_message_limit(void);
 

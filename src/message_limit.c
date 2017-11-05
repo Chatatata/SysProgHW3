@@ -2,7 +2,7 @@
 
 msglmt_t kmessaged_message_limit = KMESSAGED_DEFAULT_MESSAGE_LIMIT;
 
-KMESSAGED_EXPORT int kmessaged_set_message_limit(msglmt_t msglmt)
+int kmessaged_set_message_limit(msglmt_t msglmt)
 {
     //  Check for admin privileges
     if (!capable(CAP_SYS_ADMIN)) {
@@ -12,5 +12,10 @@ KMESSAGED_EXPORT int kmessaged_set_message_limit(msglmt_t msglmt)
     kmessaged_message_limit = msglmt;
 
     return 0;
+}
+
+msglmt_t kmessaged_get_message_limit()
+{
+    return kmessaged_message_limit;
 }
 

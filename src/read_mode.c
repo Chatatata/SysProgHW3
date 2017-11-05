@@ -1,6 +1,8 @@
 #include "read_mode.h"
 
 #include <linux/kernel.h>
+#include <linux/errno.h>
+#include <linux/fs.h>
 
 kmessaged_read_mode_t kmessaged_current_rdmod;
 static DEFINE_MUTEX(kmessaged_rdmod_lock);
