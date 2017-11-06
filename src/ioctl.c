@@ -10,7 +10,6 @@
 #include "reset.h"
 #include "read_mode.h"
 #include "message_limit.h"
-#include "query.h"
 
 int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
@@ -82,7 +81,7 @@ int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
                 return -EFAULT;
             }
 
-            result = kmessaged_delete_messages_with_query(KMESSAGED_QUERY_NAME, username);
+            //  TODO: Delete the messages.
 
             //  Release the preallocated resources
             kfree(username);
