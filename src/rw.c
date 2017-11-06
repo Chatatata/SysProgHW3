@@ -89,7 +89,7 @@ ssize_t kmessaged_read(struct file *filp, char __user *usbuf, size_t count, loff
         }
     }
 
-    if (dev->rdmod == EXCLUDE_READ) {
+    if (dev->rdmod == INCLUDE_READ) {
         for (it = 0; it < dev->read_cnt; ++it) {
             if (strcmp(dev->read_msgs[it].recipient, username_buf) == 0) {
                 result = -kmessaged_message_dev_resolve_target(dev, sender_buf, dev->read_msgs[it].uid);

@@ -4,7 +4,7 @@
 
 #include <linux/fs.h>
 
-typedef unsigned long long msglmt_t;
+typedef int msglmt_t;
 
 /**
  * kmessaged_set_message_limit

@@ -65,36 +65,28 @@ int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             printk(KERN_DEBUG "kmessaged: added target %u:%s to device\n", uid, uname);
 
             break;
+
         case KMESSAGED_IOC_S_RDMOD:
-            result = __get_user(dev->rdmod, (int __user *)arg);
-
-            if (result != 0) {
-                return result;
+            if (!capable(CAP_SYS_ADMIN)) {
+                return EPERM;
             }
 
-            break;
+            dev->rdmod = arg == 1;
 
-        case KMESSAGED_IOC_RDMOD:
-            result = __put_user(dev->rdmod, (int __user *)arg);
-            break;
-        
-        case KMESSAGED_IOC_S_MSGLMT:
-            result = __get_user(dev->msglmt, (unsigned long __user *)arg);
+            printk(KERN_DEBUG "kmessaged: messagebox changed to mode %d\n", dev->rdmod);
             
-            if (result != 0) {
-                return result;
+            return 0;
+
+        case KMESSAGED_IOC_S_MSGLMT:
+            if (!capable(CAP_SYS_ADMIN)) {
+                return EPERM;
             }
 
-            break;
-        
-        case KMESSAGED_IOC_MSGLMT:
-            result = __put_user(dev->msglmt, (unsigned long __user *)arg);
+            dev->msglmt = arg;
 
-            if (result != 0) {
-                return result;
-            }
+            printk(KERN_DEBUG "kmessaged: messagebox limit changed to %d\n", dev->msglmt);
 
-            break;
+            return 0;
 
         case KMESSAGED_IOC_RMMSG:
             //  Preallocate resources for strncpy
@@ -111,13 +103,12 @@ int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
             //  Release the preallocated resources
             kfree(username);
-            break;
+            
+            return 0;
 
         /* gtest-disable-codecov */
         default:
             return -ENOTTY;
         /* gtest-enable-codecov */
     }
-
-    return result;
 }

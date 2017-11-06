@@ -1,11 +1,43 @@
 #!/bin/sh
 
-clear
-sudo make clean
-sudo make
-nm kmessaged.ko
-sudo rmmod kmessaged 1>> /dev/null 2>&1
-sudo unlink /dev/kmessaged0
+DEVICE_NODE_NAME=kmessaged0
+
+echo "Cleaning build directory."
+sudo make clean 1>> /dev/null 2>&1
+
+echo "Building kernel module kmessaged."
+sudo make 1>> /dev/null 2>&1
+
+echo "Removing kernel module if exists."
+sudo rmmod kmessaged 1>> /dev/null 2>&1 
+if [ $? -ne 0 ]; then
+    echo "kmessaged was not inserted."
+fi
+
+sudo unlink /dev/kmessaged0 1>> /dev/null 2>&1 
+
+if [ $? -ne 0 ]; then
+    echo "Device is not attached."
+fi
+
+echo "Inserting module kmessaged.ko."
 sudo insmod kmessaged.ko
-sudo lsmod
-dmesg | grep kmessaged
+
+echo "Creating device node \"$DEVICE_NODE_NAME\"."
+sudo mknod /dev/$DEVICE_NODE_NAME c `dmesg | tail -n 1 | cut -d ' ' -f 6` 0
+
+echo "Cleaning helper build directory."
+make -C helper -s clean 1>> /dev/null 2>&1
+
+echo "Removing module header file from helper build directory."
+rm ./helper/include/kmessaged.h 1>> /dev/null 2>&1
+
+echo "Copying module header file to helper build directory."
+cp ./include/kmessaged.h ./helper/include/kmessaged.h
+
+echo "Compiling helper."
+make -C helper -s 1>> /dev/null 2>&1
+
+echo "Starting helper."
+./helper/helper 1>> /dev/null 2>&1
+

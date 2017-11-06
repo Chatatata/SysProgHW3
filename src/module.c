@@ -22,9 +22,11 @@
 
 unsigned int kmessaged_dev_major = KMESSAGED_DEFAULT_DEV_MAJOR;
 unsigned int kmessaged_dev_minor = KMESSAGED_DEFAULT_DEV_MINOR;
+extern msglmt_t kmessaged_message_limit;
 
 module_param(kmessaged_dev_major, int, S_IRUGO);
 module_param(kmessaged_dev_minor, int, S_IRUGO);
+module_param(kmessaged_message_limit, int, S_IRUGO);
 
 MODULE_AUTHOR("Bugra Ekuklu, Muratcan Sahin");
 MODULE_DESCRIPTION("Kernel message daemon as a character device amongst OS users.");
