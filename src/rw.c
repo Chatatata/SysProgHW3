@@ -192,7 +192,7 @@ ssize_t kmessaged_write(struct file *filp, const char __user *usbuf, size_t coun
         goto bailout;
     }
 
-    result = -kmessaged_msg_create(&msg, pr.msgdata, 0, pr.recipient);
+    result = -kmessaged_msg_create(&msg, pr.msgdata, get_current_cred()->uid, pr.recipient);
     
     if (result) {
         printk(KERN_DEBUG "kmessaged: error while creating message\n");

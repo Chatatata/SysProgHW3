@@ -26,6 +26,9 @@ sudo insmod kmessaged.ko
 echo "Creating device node \"$DEVICE_NODE_NAME\"."
 sudo mknod /dev/$DEVICE_NODE_NAME c `dmesg | tail -n 1 | cut -d ' ' -f 6` 0
 
+echo "Applying chmod of device node."
+sudo chmod 777 /dev/$DEVICE_NODE_NAME
+
 echo "Cleaning helper build directory."
 make -C helper -s clean 1>> /dev/null 2>&1
 
