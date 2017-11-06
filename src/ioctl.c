@@ -4,6 +4,7 @@
 #include <linux/slab.h>
 #include <linux/errno.h>
 #include <linux/module.h>
+#include <linux/types.h>
 #include <asm/switch_to.h>
 #include <asm/uaccess.h>
 
@@ -11,6 +12,7 @@
 #include "read_mode.h"
 #include "message_limit.h"
 #include "message_dev.h"
+#include "kmessage.h"
 
 int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
@@ -21,6 +23,7 @@ int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     char *buf, *uname;
     long len = 0;
     uid_t uid;
+    ssize_t i;
 
     printk(KERN_DEBUG "kmessaged: ioctl handler called with %lu, %u, %u\n", filp, cmd, arg);
 
@@ -99,7 +102,11 @@ int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
                 return -EFAULT;
             }
 
-            //  TODO: Delete the messages.
+            memset(dev->unread_msgs, 0, sizeof(struct kmessage_t) * dev->unread_cnt);
+            dev->unread_cnt = 0;
+
+            memset(dev->read_msgs, 0, sizeof(struct kmessage_t) * dev->read_cnt);
+            dev->read_cnt = 0;
 
             //  Release the preallocated resources
             kfree(username);
