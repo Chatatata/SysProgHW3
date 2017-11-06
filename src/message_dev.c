@@ -33,6 +33,8 @@ int kmessaged_message_dev_init(struct kmessaged_message_dev_t *mdev)
     mdev->unread_cnt = 0UL;
     mdev->read_cnt = 0UL;
     mdev->resize_cnt = 0UL;
+    mdev->rdmod = EXCLUDE_READ;
+    mdev->msglmt = KMESSAGED_DEFAULT_MESSAGE_LIMIT;
 
     return 0;
 }

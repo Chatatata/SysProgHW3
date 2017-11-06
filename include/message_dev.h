@@ -2,6 +2,7 @@
 
 #include "kmessaged.h"
 #include "message_limit.h"
+#include "read_mode.h"
 
 #include <linux/kernel.h>
 #include <linux/errno.h>
@@ -15,6 +16,8 @@ struct kmessaged_message_dev_t {
     unsigned long read_cnt;
     unsigned long resize_cnt;
     struct cdev cdev;
+    kmessaged_read_mode_t rdmod;
+    msglmt_t msglmt;
 };
 
 KMESSAGED_EXPORT int kmessaged_message_dev_init(struct kmessaged_message_dev_t *mdev);

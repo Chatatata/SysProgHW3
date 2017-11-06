@@ -10,13 +10,13 @@
 #include "reset.h"
 #include "read_mode.h"
 #include "message_limit.h"
+#include "message_dev.h"
 
 int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
     int err = 0;
     int result = 0;
-    kmessaged_read_mode_t rdmod;
-    unsigned long long msglmt;
+    struct kmessaged_message_dev_t *dev = filp->private_data;
     char *username = (void *)0x0;
 
     //  Checks whether provided IOCTL command is valid, returns ENOTTY if not.
@@ -34,40 +34,34 @@ int kmessaged_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     }
 
     switch (cmd) {
-        case KMESSAGED_IOC_RESET:
-            result = kmessaged_reset();
-            break;
-
         case KMESSAGED_IOC_S_RDMOD:
-            result = __get_user(rdmod, (int __user *)arg);
+            result = __get_user(dev->rdmod, (int __user *)arg);
 
             if (result != 0) {
                 return result;
             }
-
-            result = kmessaged_set_read_mode(rdmod);
             break;
 
         case KMESSAGED_IOC_RDMOD:
-            result = kmessaged_get_current_read_mode(&rdmod);
-
-            result = __put_user(rdmod, (int __user *)arg);
+            result = __put_user(dev->rdmod, (int __user *)arg);
             break;
         
         case KMESSAGED_IOC_S_MSGLMT:
-            result = __get_user(msglmt, (unsigned long __user *)arg);
+            result = __get_user(dev->msglmt, (unsigned long __user *)arg);
             
             if (result != 0) {
                 return result;
             }
 
-            result = kmessaged_set_message_limit(msglmt);
             break;
         
         case KMESSAGED_IOC_MSGLMT:
-            msglmt = kmessaged_get_message_limit();
+            result = __put_user(dev->msglmt, (unsigned long __user *)arg);
 
-            result = __put_user(msglmt, (unsigned long __user *)arg);
+            if (result != 0) {
+                return result;
+            }
+
             break;
 
         case KMESSAGED_IOC_RMMSG:
