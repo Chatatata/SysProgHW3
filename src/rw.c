@@ -2,6 +2,7 @@
 
 #include <linux/kernel.h>
 #include <linux/slab.h>
+#include <linux/sched.h>
 #include <asm/uaccess.h>
 #include <asm/switch_to.h>
 
@@ -44,7 +45,11 @@ ssize_t kmessaged_read(struct file *filp, char __user *usbuf, size_t count, loff
     struct kmessaged_message_dev_t *dev = filp->private_data;
     int result;
     char *buf = kmalloc(sizeof(char) * BUFSIZ, GFP_KERNEL);
+    char *username_buf = kmalloc(sizeof(char) * BUFSIZ, GFP_KERNEL);
+    char *sender_buf = kmalloc(sizeof(char) * BUFSIZ, GFP_KERNEL);
     ssize_t it;
+    uid_t uid;
+    unsigned long unread_cnt;
 
     printk(KERN_DEBUG "kmessaged: gonna read with %d chars at %d\n", count, *f_pos);
 
@@ -53,35 +58,67 @@ ssize_t kmessaged_read(struct file *filp, char __user *usbuf, size_t count, loff
     }
 
     memset(buf, 0, sizeof(char) * BUFSIZ);
-    
-    if (!dev->unread_cnt) {
-        printk(KERN_NOTICE "kmessaged: there are no messages awaiting\n");
-    } else {
-        printk(KERN_NOTICE "kmessaged: there are %lu unread messages\n", dev->unread_cnt);
-    }
 
-    if (*f_pos != 0) {
-        printk(KERN_NOTICE "kmessaged: *f_pos EOF\n");
+    result = -kmessaged_message_dev_resolve_target(dev, username_buf, get_current_cred()->uid);
 
-        return 0;
+    if (result) {
+        printk(KERN_DEBUG "kmessaged: target could not be resolved with uid: %u\n", get_current_cred()->uid);
+
+        goto on_err;
     }
 
     for (it = 0; it < dev->unread_cnt; ++it) {
-        strcat(buf, "* ");
-        strcat(buf, "recipient");
-        strcat(buf, ":\t");
-        strcat(buf, dev->unread_msgs[it].msg);
-        strcat(buf, "\n");
+        if (strcmp(dev->unread_msgs[it].recipient, username_buf) == 0) {
+            result = -kmessaged_message_dev_resolve_target(dev, sender_buf, dev->unread_msgs[it].uid);
+
+            if (result) {
+                printk(KERN_DEBUG "kmessaged: sender could not be resolved with uid: %u\n", dev->unread_msgs[it].uid);
+
+                goto on_err;
+            }
+
+            strcat(buf, "* ");
+            strcat(buf, sender_buf);
+            strcat(buf, ":\t");
+            strcat(buf, dev->unread_msgs[it].msg);
+            strcat(buf, "\n");
         
-        printk(KERN_NOTICE "kmessaged: message found: %s\n", dev->unread_msgs[it].msg);
+            printk(KERN_NOTICE "kmessaged: message found: %s\n", dev->unread_msgs[it].msg);
+
+            memset(sender_buf, 0, sizeof(char) * BUFSIZ);
+        }
     }
 
-    for (it = 0; it < dev->read_cnt; ++it) {
-        strcat(buf, "  ");
-        strcat(buf, "recipient");
-        strcat(buf, ":\t");
-        strcat(buf, dev->read_msgs[it].msg);
-        strcat(buf, "\n");
+    if (dev->rdmod == EXCLUDE_READ) {
+        for (it = 0; it < dev->read_cnt; ++it) {
+            if (strcmp(dev->read_msgs[it].recipient, username_buf) == 0) {
+                result = -kmessaged_message_dev_resolve_target(dev, sender_buf, dev->read_msgs[it].uid);
+
+                if (result) {
+                    printk(KERN_DEBUG "kmessaged: sender could not be resolved with uid: %u\n", dev->read_msgs[it].uid);
+
+                    goto on_err;
+                }
+
+                strcat(buf, "  ");
+                strcat(buf, sender_buf);
+                strcat(buf, ":\t");
+                strcat(buf, dev->read_msgs[it].msg);
+                strcat(buf, "\n");
+            
+                printk(KERN_NOTICE "kmessaged: message found: %s\n", dev->read_msgs[it].msg);
+
+                memset(sender_buf, 0, sizeof(char) * BUFSIZ);
+            }
+        }
+    }
+    
+    if (*f_pos != 0) {
+        printk(KERN_NOTICE "kmessaged: *f_pos EOF\n");
+
+        kfree(buf);
+
+        return 0;
     }
 
     result = kmessaged_message_dev_readall(dev);
@@ -101,12 +138,19 @@ ssize_t kmessaged_read(struct file *filp, char __user *usbuf, size_t count, loff
     }
 
     kfree(buf);
+    kfree(username_buf);
 
     printk(KERN_DEBUG "kmessaged: gonna report %d chars read\n", BUFSIZ * sizeof(char));
 
     *f_pos += count;
 
     return BUFSIZ * sizeof(char);
+
+on_err:
+    kfree(buf);
+    kfree(username_buf);
+
+    return 0;
 }
 
 ssize_t kmessaged_write(struct file *filp, const char __user *usbuf, size_t count, loff_t *f_pos)
@@ -116,11 +160,20 @@ ssize_t kmessaged_write(struct file *filp, const char __user *usbuf, size_t coun
     char *buf = kmalloc(sizeof(char) * count, GFP_KERNEL);
     struct kmessage_t msg;
     struct _kmessaged_parse_result_t pr;
+    unsigned long msgcnt;
 
     printk(KERN_DEBUG "kmessaged: gonna write to %x\n", dev);
 
     if (!buf) {
-        return ENOMEM;
+        return -ENOMEM;
+    }
+
+    msgcnt = dev->unread_cnt;
+
+    if (dev->unread_cnt >= dev->msglmt) {
+        printk(KERN_NOTICE "kmessaged: maximum number of unread messages reached\n");
+
+        return -ENOMEM;
     }
 
     result = copy_from_user(buf, usbuf, count);
