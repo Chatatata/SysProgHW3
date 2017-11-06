@@ -53,21 +53,35 @@ ssize_t kmessaged_read(struct file *filp, char __user *usbuf, size_t count, loff
     }
 
     memset(buf, 0, sizeof(char) * BUFSIZ);
-
     
     if (!dev->unread_cnt) {
         printk(KERN_NOTICE "kmessaged: there are no messages awaiting\n");
-
-        return 0;
     } else {
         printk(KERN_NOTICE "kmessaged: there are %lu unread messages\n", dev->unread_cnt);
     }
 
+    if (*f_pos != 0) {
+        printk(KERN_NOTICE "kmessaged: *f_pos EOF\n");
+
+        return 0;
+    }
+
     for (it = 0; it < dev->unread_cnt; ++it) {
+        strcat(buf, "* ");
+        strcat(buf, "recipient");
+        strcat(buf, ":\t");
         strcat(buf, dev->unread_msgs[it].msg);
         strcat(buf, "\n");
         
         printk(KERN_NOTICE "kmessaged: message found: %s\n", dev->unread_msgs[it].msg);
+    }
+
+    for (it = 0; it < dev->read_cnt; ++it) {
+        strcat(buf, "  ");
+        strcat(buf, "recipient");
+        strcat(buf, ":\t");
+        strcat(buf, dev->read_msgs[it].msg);
+        strcat(buf, "\n");
     }
 
     result = kmessaged_message_dev_readall(dev);
@@ -89,6 +103,8 @@ ssize_t kmessaged_read(struct file *filp, char __user *usbuf, size_t count, loff
     kfree(buf);
 
     printk(KERN_DEBUG "kmessaged: gonna report %d chars read\n", BUFSIZ * sizeof(char));
+
+    *f_pos += count;
 
     return BUFSIZ * sizeof(char);
 }
