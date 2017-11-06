@@ -14,7 +14,11 @@
 #include <asm/uaccess.h>
 
 #include "kmessaged.h"
-#include "dispatch.h"
+#include "message_dev.h"
+#include "rw.h"
+#include "open_release.h"
+#include "ioctl.h"
+#include "llseek.h"
 
 unsigned int kmessaged_dev_major = KMESSAGED_DEFAULT_DEV_MAJOR;
 unsigned int kmessaged_dev_minor = KMESSAGED_DEFAULT_DEV_MINOR;
@@ -24,8 +28,20 @@ module_param(kmessaged_dev_minor, int, S_IRUGO);
 
 MODULE_AUTHOR("Bugra Ekuklu, Muratcan Sahin");
 MODULE_DESCRIPTION("Kernel message daemon as a character device amongst OS users.");
-MODULE_LICENSE("MIT");
+MODULE_LICENSE("Dual BSD/GPL");
 MODULE_VERSION("0.1");
+
+static struct kmessaged_message_dev_t *mdev;
+
+struct file_operations kmessaged_ops = {
+    .owner = THIS_MODULE,
+    .llseek = kmessaged_llseek,
+    .read = kmessaged_read,
+    .write = kmessaged_write,
+    .unlocked_ioctl = kmessaged_ioctl,
+    .open = kmessaged_open,
+    .release = kmessaged_release
+};
 
 /**
  * kmessaged_init
@@ -53,7 +69,35 @@ static int __init kmessaged_init(void)
         return result;
     }
 
-    kmessaged_dispatch_queue_init_main();
+    printk(KERN_DEBUG "kmessaged: instantiated with major %d and minor %d\n", kmessaged_dev_major, kmessaged_dev_minor);
+
+    mdev = kmalloc(sizeof(struct kmessaged_message_dev_t), GFP_KERNEL);
+
+    result = kmessaged_message_dev_init(mdev);
+
+    if (result) {
+        printk(KERN_DEBUG "kmessaged: device cannot be initialized\n");
+
+        goto bailout;
+    }
+
+    devno = MKDEV(kmessaged_dev_major, kmessaged_dev_minor);
+    cdev_init(&mdev->cdev, &kmessaged_ops);
+    mdev->cdev.owner = THIS_MODULE;
+    mdev->cdev.ops = &kmessaged_ops;
+
+    result = cdev_add(&mdev->cdev, devno, 1);
+
+    if (result) {
+        printk(KERN_NOTICE "kmessaged: device couldn't be added: %d\n", result);
+
+        goto bailout;
+    }
+
+    return 0;
+
+bailout:
+    kfree(mdev);
 
     return result;
 }
@@ -65,7 +109,10 @@ static int __init kmessaged_init(void)
  */
 static void __exit kmessaged_exit(void)
 {
-    //  do some cleanup...
+    kmessaged_message_dev_release(mdev);
+    kfree(mdev);
+
+    printk(KERN_DEBUG "kmessaged: terminating\n");
 }
 
 module_init(kmessaged_init);

@@ -35,3 +35,4 @@ KMESSAGED_EXPORT int kmessaged_msg_create(struct kmessage_t *msgstruct, const ch
  * @return This function always returns 0.
  */
 KMESSAGED_EXPORT int kmessaged_msg_release(struct kmessage_t *msgstruct);
+
